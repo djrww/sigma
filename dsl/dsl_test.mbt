@@ -16,4 +16,12 @@ test "dsl/core agreement" {
   )
   inspect(@dsl.run("bezout(270,192)"), content="true")
   inspect(@dsl.run("cegis()"), content="true")
+  inspect(@dsl.run("sigma_suite()"), content="true")
+  inspect(@dsl.run("sigma_lwe()"), content="true")
+  inspect(@dsl.run("sigma_trapdoor()"), content="true")
+  inspect(@dsl.run("sigma_isogeny()"), content="true")
+  inspect(@dsl.run("sigma_dlog()"), content="true")
+  inspect(@dsl.run("sigma_padic()"), content="true")
+  inspect(@dsl.run("sigma_zk()"), content="true")
+  inspect(@dsl.run("sigma_kron()"), content="true")
 }

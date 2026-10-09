@@ -1,0 +1,156 @@
+///|
+/// proof/sigma/sigma.mbtp —— 第十形式化驗證套件：`sigma` 密碼學領域特定語言 (Sigma Crypto DSL)
+/// 七大密碼學協定核與政策守衛之形式化規格與引理。
+
+/// 1. Ring-LWE / ML-KEM 多項式環分量加密與解密誤差提取核。
+pub predicate ring_lwe_enc_dec_ok(
+  a0 : Int,
+  a1 : Int,
+  s0 : Int,
+  s1 : Int,
+  e0 : Int,
+  e1 : Int,
+  m0 : Int,
+  m1 : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (c0, c1, dec0, dec1) =>
+      c0 == a0 * s0 + a1 * s1 + e0 + m0 &&
+      c1 == a1 * s0 + a0 * s1 + e1 + m1 &&
+      dec0 == m0 + e0 &&
+      dec1 == m1 + e1
+  }
+}
+
+/// 2. Micciancio HNF 公鑰么模隱藏與 GPV 陷門行列式平方守恆核。
+pub predicate p_unimod2_sigma_hyp(
+  u11 : Int,
+  u12 : Int,
+  u21 : Int,
+  u22 : Int,
+) {
+  u11 * u22 - u12 * u21 == 1
+}
+
+pub predicate micciancio_hnf_trapdoor_ok(
+  b11 : Int,
+  b12 : Int,
+  b21 : Int,
+  b22 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (det_b, det_h, rec_b11) =>
+      det_b == b11 * b22 - b12 * b21 &&
+      det_h == det_b &&
+      rec_b11 == b11
+  }
+}
+
+/// 3. Vélu–Kani 2D-Isogeny 塊反對角正交鑽石核（SQIsign2D 度數守恆 deg(α)+deg(β)）。
+pub predicate velu_kani_2d_diamond_ok(
+  da : Int,
+  db : Int,
+  x1 : Int,
+  x2 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (d_sum, y1, y2) =>
+      d_sum == da + db &&
+      y1 == (da + db) * x1 &&
+      y2 == (da + db) * x2
+  }
+}
+
+/// 4. Pohlig–Hellman 離散對數分解與 Bézout CRT 私鑰重組核。
+pub predicate p_ph_crt_hyp(p1 : Int, p2 : Int, u1 : Int, u2 : Int) {
+  p1 > 1 && p2 > 1 && p1 * u1 + p2 * u2 == 1
+}
+
+pub predicate pohlig_hellman_crt_ok(
+  p1 : Int,
+  p2 : Int,
+  x1 : Int,
+  x2 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (x_sec, k1, k2) =>
+      x_sec - x1 == p1 * k1 &&
+      x_sec - x2 == p2 * k2
+  }
+}
+
+/// 5. p-進 Hensel 牛頓二次收斂密鑰提升見證核。
+pub predicate p_sigma_hensel_hyp(
+  r0 : Int,
+  a : Int,
+  t : Int,
+  pk : Int,
+  m : Int,
+) {
+  pk > 1 && r0 * r0 - a == pk * m && 2 * r0 * t + m == 0
+}
+
+pub predicate padic_hensel_key_lift_ok(
+  r0 : Int,
+  a : Int,
+  t : Int,
+  pk : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (r1, k2) =>
+      r1 == r0 + t * pk &&
+      r1 * r1 - a == pk * pk * k2
+  }
+}
+
+/// 6. Grassmann 超矩陣 Berezinian 同態承諾與超跡零知識盲化核。
+pub predicate grassmann_ber_zk_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  m1 : Int,
+  m2 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (ber_mn_soul, ber_prod_soul, zk_mask_str) =>
+      ber_mn_soul == ber_prod_soul &&
+      ber_mn_soul == -(b * c * e) - a * f * g &&
+      zk_mask_str == 0 &&
+      m1 - m1 + (m2 - m2) == zk_mask_str
+  }
+}
+
+/// 7. `policy hadamard_guard = strict` Kronecker 張量擴散層防溢位葉節點路由核。
+pub predicate hadamard_guard_kron_route_ok(
+  a1 : Int,
+  a2 : Int,
+  b1 : Int,
+  b2 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (det_leaf_fast, det_dense_expand, trace_fast) =>
+      det_leaf_fast == det_dense_expand &&
+      det_leaf_fast == a1 * a2 * (a1 * a2) * (b1 * b2 * (b1 * b2)) &&
+      trace_fast == (a1 + a2) * (b1 + b2)
+  }
+}
+
+/// 邏輯側引理 1：Kani 2D 同源塊矩陣正交對角化恆等式。
+pub lemma lemma_kani_2d_orthogonality(da : Int, db : Int, x : Int) where {
+  proof_ensure: da * x + db * x == (da + db) * x,
+} {}
+
+/// 邏輯側引理 2：超跡零知識遮罩恆等消沒。
+pub lemma lemma_zk_supertrace_mask(u1 : Int, v1 : Int, u2 : Int, v2 : Int) where {
+  proof_ensure: u1 * v1 - u2 * v2 - (v1 * u1 - v2 * u2) == 0,
+} {}

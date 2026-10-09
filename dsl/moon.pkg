@@ -6,5 +6,6 @@ import {
   "sigma/supermatrix/curves",
   "sigma/supermatrix/padic",
   "sigma/supermatrix/synth",
+  "sigma/supermatrix/sigma",
   "sigma/supermatrix/proof/synth" @psynth,
 }

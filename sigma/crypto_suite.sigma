@@ -1,0 +1,34 @@
+// ============================================================================
+// sigma/crypto_suite.sigma —— Σ-密碼學領域特定語言（Sigma Crypto DSL）標準套件規格
+// 專攻領域：格密碼 (LWE/NTRU/GPV)、同源與橢圓曲線密碼 (Vélu/Kani/Tate)、
+//          隱藏子群離散對數 (SNF/Pohlig-Hellman/CRT)、p-進 Hensel 與超矩陣承諾
+// ============================================================================
+
+policy hadamard_guard = strict;
+policy witness_obligatory = enforce;
+policy complexity_gate = audit;
+policy egraph_opt = on;
+policy cegis_synth = on;
+policy mat2_backend = auto;
+policy constant_time = canonical;
+
+// 1. 格密碼 Ring-LWE / ML-KEM 雙向 NTT 多項式環密鑰封裝與 DispCircMat O(N) 壓縮
+cipher ring_lwe_kem = ring_lwe_ntt([3, 1, 4, 1], [1, 0, 1, 0], [0, 1, 0, 0], 17);
+
+// 2. 格密碼 Micciancio HNF 公鑰壓縮、GPV 對偶格陷門與 LLL/CVP 解碼
+cipher lattice_gpv_trapdoor = lattice_trapdoor([[2, 1], [1, 3]], [5, 7], 2);
+
+// 3. 後量子同源密碼 Vélu 2-/3-同源鏈、二次扭轉防禦、Tate 模配對與 Kani 2D 同源
+cipher isogeny_velu_kani = velu_isogeny_suite(19, 1, 1, 3, 5);
+
+// 4. 阿貝爾群離散對數 Smith 正規形約化、p-Sylow Pohlig-Hellman 分解與 CRT 重組
+cipher group_dlog_snf = hidden_subgroup_dlog([[6, 0], [0, 15]], 14, 9);
+
+// 5. p-進 Hensel 二次收斂密鑰提升、形式群對數同構與 SL2(Z/p^n) 擴展圖雜湊
+cipher padic_sl2_suite = padic_hensel_sl2(3, 2, 7, 4);
+
+// 6. 超矩陣 Grassmann Berezinian 同態承諾、超跡零知識遮罩與辛極化配對
+cipher super_berezinian_zk = supermatrix_commit(3, 2, 5, 4, 1, 7);
+
+// 7. 高維 Kronecker 溢位免疫張量擴散層與 F_p[x] 多項式鉛筆認證指紋
+cipher kron_poly_auth = kron_guarded_cipher(17);

@@ -159,6 +159,27 @@ pub fn proved_goals() -> Array[(String, String)] {
     (
       "displacement_circulant2_synth", "mat2/fn｜Why3+z3 全部驗證條件消解",
     ),
+    (
+      "ring_lwe_sym_enc_dec_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "micciancio_hnf_trapdoor_indist_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "velu_kani_2d_diamond_norm_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "pohlig_hellman_crt_dlog_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "padic_hensel_key_lift_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "grassmann_berezinian_zk_commit_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "hadamard_guard_kron_route_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
     ("dft4_roundtrip_synth", "spec/fn｜Why3+z3 全部驗證條件消解"),
     ("convolution_theorem2_synth", "spec/fn｜Why3+z3 全部驗證條件消解"),
     (
@@ -260,6 +281,12 @@ pub fn proved_goals() -> Array[(String, String)] {
       "lemma_parallelogram_scalar", "latt/lemma｜Why3+z3 全部驗證條件消解",
     ),
     ("tmin", "mat2/fn｜Why3+z3 全部驗證條件消解"),
+    (
+      "lemma_kani_2d_orthogonality", "sigma/lemma｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "lemma_zk_supertrace_mask", "sigma/lemma｜Why3+z3 全部驗證條件消解",
+    ),
     (
       "lemma_cubic_polarization_scalar", "spec/lemma｜Why3+z3 全部驗證條件消解",
     ),
@@ -385,5 +412,5 @@ pub fn skipped_exploded_algorithms() -> Array[(String, String, String, String)] 
 ///|
 /// 總結：(已證 VC 數, 未決 VC 數, 已證定義數, 未決定義數)。
 pub fn summary() -> (Int, Int, Int, Int) {
-  (150, 0, 155, 0)
+  (159, 0, 164, 0)
 }

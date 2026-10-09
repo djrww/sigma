@@ -20,6 +20,18 @@ fn main {
     println(@synth.render_synth_report())
   } else if mode == "mat2" {
     println(@mat2.render_mat2_report())
+  } else if mode == "sigma" {
+    println(@sigma.render_sigma_report())
+  } else if mode == "transpile" {
+    let src = if args.length() > 2 {
+      args[2]
+    } else {
+      @sigma.standard_sigma_script()
+    }
+    println("// === 1. 生成之 MoonBit 源碼 (.mbt) ===")
+    println(@sigma.transpile_to_moonbit(src))
+    println("// === 2. 生成之形式化規格 (.mbtp) ===")
+    println(@sigma.transpile_to_mbtp(src))
   } else if mode == "proof-audit" {
     println(@corpus.render_proof_audit_report())
   } else if mode == "selftest" {
@@ -55,14 +67,17 @@ fn main {
     println(
       "mat2:  Grassmann超行列式 = \{@mat2.compare_berezinian_mat1_vs_mat2(2, 3, 5, 7, 11, 13).0}  多項式SNF分離 = \{@mat2.compare_polymat_vs_mat1(17L).0}  Tropical測地線 = \{@mat2.compare_tropical_geodesic_vs_mat1().0}",
     )
+    println(
+      "sigma: 密碼學DSL七大套件 = \{@sigma.verify_all_compiled_ciphers()}  AOT預編譯算子數 = \{@sigma.generated_suite_ciphers().length()}",
+    )
     let (pv, pt, pd, pu) = @corpus.summary()
     println(
-      "proof: 九大套件 VC = \{pv}/\{pv + pt} 已證  帶約束定義 = \{pd}/\{pd + pu} 已證  超時略過定理 = \{@corpus.skipped_timeout_theorems().length()}  組合爆炸略過演算法 = \{@corpus.skipped_exploded_algorithms().length()}",
+      "proof: 十大套件 VC = \{pv}/\{pv + pt} 已證  帶約束定義 = \{pd}/\{pd + pu} 已證  超時略過定理 = \{@corpus.skipped_timeout_theorems().length()}  組合爆炸略過演算法 = \{@corpus.skipped_exploded_algorithms().length()}",
     )
   } else {
     println("Σ-超矩陣框架（supermatrix）")
     println(
-      "模式：stats | corpus-md | corpus-csv | corpus-json | dsl <程式> | synth | mat2 | proof-audit | selftest",
+      "模式：stats | corpus-md | corpus-csv | corpus-json | dsl <程式> | synth | mat2 | sigma | transpile | proof-audit | selftest",
     )
   }
 }

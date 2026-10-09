@@ -8,6 +8,7 @@ import {
   "sigma/supermatrix/dsl",
   "sigma/supermatrix/synth",
   "sigma/supermatrix/mat2",
+  "sigma/supermatrix/sigma",
   "sigma/supermatrix/corpus",
   "moonbitlang/core/env",
 }

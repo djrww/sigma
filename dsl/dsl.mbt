@@ -559,6 +559,15 @@ pub fn call_builtin(name : String, args : Array[Expr]) -> Value {
       VBool(@synth.verify_bezout_cert(a, b, c))
     }
     "cegis" => VBool(@synth.cegis_synth_karatsuba_im().verified)
+    // —— sigma 密碼學領域特定語言（Crypto DSL）內嵌算子 ——
+    "sigma_suite" => VBool(@sigma.verify_all_compiled_ciphers())
+    "sigma_lwe" => VBool(@sigma.compiled_ring_lwe_kem().ok)
+    "sigma_trapdoor" => VBool(@sigma.compiled_lattice_gpv_trapdoor().ok)
+    "sigma_isogeny" => VBool(@sigma.compiled_isogeny_velu_kani().ok)
+    "sigma_dlog" => VBool(@sigma.compiled_group_dlog_snf().ok)
+    "sigma_padic" => VBool(@sigma.compiled_padic_sl2_suite().ok)
+    "sigma_zk" => VBool(@sigma.compiled_super_berezinian_zk().ok)
+    "sigma_kron" => VBool(@sigma.compiled_kron_poly_auth().ok)
     "text" => VText(eval(args[0]).to_text())
     _ => VText("未知算子:" + name)
   }
