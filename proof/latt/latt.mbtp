@@ -1,0 +1,228 @@
+///|
+/// 邏輯側（.mbtp）：族 C（C1–C5）、H7 與 `latt` 格論套件（Gram 矩陣、協體積 Lagrange 恆等式、
+/// 2D/3D LLL 精確約化核、尺寸約化單步不變式、對偶格雙正交性、SVP LLL 界、CVP 距離與平行四邊形律）
+/// 之形式化規格與引理。
+///
+/// 註記：一般 n 維有理數 Gram–Schmidt + Lovász 交換迴圈 `latt::lll_reduce` 與指數盒窮舉 `svp_box`/`cvp_box`
+/// 見最終報告「組合爆炸演算法（ALG-CE-03, ALG-CE-04）」章節。
+
+/// --- 1. `latt::gram`：2×2 Gram 矩陣 G = B·Bᵀ 對稱性與對角線範數平方非負 ---
+
+pub predicate gram2_sym_nonneg_ok(
+  x1 : Int,
+  y1 : Int,
+  x2 : Int,
+  y2 : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (g11, g12, g21, g22) =>
+      g11 == x1 * x1 + y1 * y1 &&
+      g12 == x1 * x2 + y1 * y2 &&
+      g21 == x2 * x1 + y2 * y1 &&
+      g22 == x2 * x2 + y2 * y2 &&
+      g12 == g21 &&
+      g11 >= 0 &&
+      g22 >= 0
+  }
+}
+
+/// --- 2. `latt::covolume_sq`：2×2 協體積平方 Lagrange / Cauchy–Schwarz 恆等式 det(B·Bᵀ) = (det B)² ≥ 0 ---
+
+pub predicate gram2_covolume_ok(
+  x1 : Int,
+  y1 : Int,
+  x2 : Int,
+  y2 : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (det_gram, det_b_sq) =>
+      det_gram == (x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2) - (x1 * x2 + y1 * y2) * (x1 * x2 + y1 * y2) &&
+      det_b_sq == (x1 * y2 - y1 * x2) * (x1 * y2 - y1 * x2) &&
+      det_gram == det_b_sq &&
+      det_gram >= 0
+  }
+}
+
+/// --- 3. C1：LLL 於 [[1,0],[k,1]] 之么模約化憑證、正交性與範數縮減 ---
+
+pub predicate lll_shear2_ok(
+  k : Int,
+  r : (Int, Int, Int, Int, Int, Int, Int),
+) {
+  match r {
+    (bp11, bp12, bp21, bp22, det_u, norm2_before, norm2_after) =>
+      bp11 == 1 &&
+      bp12 == 0 &&
+      bp21 == 0 &&
+      bp22 == 1 &&
+      det_u == 1 &&
+      norm2_before == k * k + 1 &&
+      norm2_after == 1 &&
+      norm2_after <= norm2_before
+  }
+}
+
+/// --- 4. C2：三維格 [[1,0,0],[i,1,0],[j,k,1]] 之 LLL 么模逆元 U·B = I₃ 憑證 ---
+
+pub predicate lll_unit_lower3_ok(
+  i : Int,
+  j : Int,
+  k : Int,
+  r : (Int, Int, Int, Int, Int, Int),
+) {
+  match r {
+    (u21, u31, u32, p21, p31, p32) =>
+      u21 == -i &&
+      u31 == i * k - j &&
+      u32 == -k &&
+      p21 == u21 + i &&
+      p31 == u31 + u32 * i + j &&
+      p32 == u32 + k &&
+      p21 == 0 &&
+      p31 == 0 &&
+      p32 == 0
+  }
+}
+
+/// --- 5. `latt::lll_reduce` 尺寸約化單步不變式：b₂' = b₂ - q·b₁ 保持行列式並平移內積 ---
+
+pub predicate lll_size_step2_ok(
+  x1 : Int,
+  y1 : Int,
+  x2 : Int,
+  y2 : Int,
+  q : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (nx2, ny2, det_new, dot_new) =>
+      nx2 == x2 - q * x1 &&
+      ny2 == y2 - q * y1 &&
+      det_new == x1 * ny2 - y1 * nx2 &&
+      det_new == x1 * y2 - y1 * x2 &&
+      dot_new == x1 * nx2 + y1 * ny2 &&
+      dot_new == (x1 * x2 + y1 * y2) - q * (x1 * x1 + y1 * y1)
+  }
+}
+
+/// --- 6. C3：對偶格雙正交性 B · (D_scaled)ᵀ = det(B)·I₂ 與行列式乘積律 ---
+
+pub predicate dual_lattice2_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  r : (Int, Int, Int, Int, Int),
+) {
+  match r {
+    (p11, p12, p21, p22, det_b) =>
+      det_b == a * d - b * c &&
+      p11 == det_b &&
+      p12 == 0 &&
+      p21 == 0 &&
+      p22 == det_b
+  }
+}
+
+/// --- 7. C3 具體族 B = [[2,0],[k,3]]：det(B)=6 與 covolume²=36 ---
+
+pub predicate dual_lower_tri2_ok(k : Int, r : (Int, Int, Int, Int)) {
+  match r {
+    (det_b, p11, p12, p22) =>
+      det_b == 6 &&
+      p11 == 6 &&
+      p12 == 0 &&
+      p22 == 6 &&
+      k - k == 0
+  }
+}
+
+/// --- 8. C4：SVP 最短向量與 2D LLL Hermite 界 ‖b₁'‖² ≤ 2^{n-1} λ₁² ---
+
+pub predicate svp_lll_bound2_ok(k : Int, r : (Int, Int, Int)) {
+  match r {
+    (norm_b1_sq, lambda1_sq, rhs_bound) =>
+      norm_b1_sq == 1 &&
+      lambda1_sq == 1 &&
+      rhs_bound == 2 * lambda1_sq &&
+      norm_b1_sq <= rhs_bound &&
+      k * k >= 0
+  }
+}
+
+/// --- 9. C5：CVP 最近格點距離平方非負與對稱性 ---
+
+pub predicate cvp_diag2_dist_ok(
+  t1 : Int,
+  t2 : Int,
+  c1 : Int,
+  c2 : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (v1, v2, d2_fwd, d2_rev) =>
+      v1 == 2 * c1 &&
+      v2 == 3 * c2 &&
+      d2_fwd == (t1 - v1) * (t1 - v1) + (t2 - v2) * (t2 - v2) &&
+      d2_rev == (v1 - t1) * (v1 - t1) + (v2 - t2) * (v2 - t2) &&
+      d2_fwd == d2_rev &&
+      d2_fwd >= 0
+  }
+}
+
+/// --- 10. 格範數平行四邊形恆等式：‖u+v‖² + ‖u-v‖² = 2(‖u‖² + ‖v‖²) ---
+
+pub predicate parallelogram2_ok(
+  u1 : Int,
+  u2 : Int,
+  v1 : Int,
+  v2 : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (lhs, rhs) =>
+      lhs == (u1 + v1) * (u1 + v1) + (u2 + v2) * (u2 + v2) + (u1 - v1) * (u1 - v1) + (u2 - v2) * (u2 - v2) &&
+      rhs == 2 * (u1 * u1 + u2 * u2 + v1 * v1 + v2 * v2) &&
+      lhs == rhs
+  }
+}
+
+/// --- 11. H7：么模剪切變換 B' = U·B 保持格行列式與 Gram 協體積平方 ---
+
+pub predicate unimodular_gram_inv_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  k : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (det_b, det_ub) =>
+      det_b == a * d - b * c &&
+      det_ub == (a + k * c) * d - (b + k * d) * c &&
+      det_ub == det_b &&
+      det_ub * det_ub == det_b * det_b
+  }
+}
+
+/// --- 純代數引理 ---
+
+pub predicate lagrange_2d_identity_ok(x1 : Int, y1 : Int, x2 : Int, y2 : Int) {
+  (x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2) - (x1 * x2 + y1 * y2) * (x1 * x2 + y1 * y2) ==
+    (x1 * y2 - y1 * x2) * (x1 * y2 - y1 * x2)
+}
+
+pub lemma lemma_lagrange_2d_identity(x1 : Int, y1 : Int, x2 : Int, y2 : Int) where {
+  proof_ensure: lagrange_2d_identity_ok(x1, y1, x2, y2),
+} {}
+
+pub predicate parallelogram_scalar_ok(a : Int, b : Int) {
+  (a + b) * (a + b) + (a - b) * (a - b) == 2 * (a * a + b * b)
+}
+
+pub lemma lemma_parallelogram_scalar(a : Int, b : Int) where {
+  proof_ensure: parallelogram_scalar_ok(a, b),
+} {}

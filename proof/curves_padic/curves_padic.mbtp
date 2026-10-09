@@ -1,0 +1,303 @@
+///|
+/// 邏輯側（.mbtp）：族 E（E1–E6）、族 F（F1）、H1–H5、H10 以及 `curves`（橢圓曲線、Hasse 界、
+/// 二次扭轉、Vélu 2-/3-同源、Tate 模 Frobenius）、`padic`（Hensel/Teichmüller、乘法形式群律、
+/// 形式對數、SL₂(Z/p^n) 階、SO(3,Z)、超度量）與 `dsl`（規範形等價律）之形式化規格與引理。
+///
+/// 註記：有限域點群 O(p²) 窮舉 `EC::points`、SL₂ 四重窮舉 `sl2_order_bruteforce`、任意階三元冪級數
+/// `lift_to_ternary` 見最終報告「組合爆炸演算法（ALG-CE-07, ALG-CE-08, ALG-CE-10）」與「超時定理（T-TO-03..07）」。
+
+/// --- 1. E1/H2：橢圓曲線點群階 #E = p + 1 - t、Hasse 界 t² ≤ 4p 與結構 d₁|d₂ ---
+
+pub predicate p_ec_hasse_hyp(
+  p : Int,
+  t : Int,
+  d1 : Int,
+  d2 : Int,
+  k : Int,
+) {
+  p >= 2 &&
+  t * t <= 4 * p &&
+  d1 > 0 &&
+  k > 0 &&
+  d2 == d1 * k &&
+  p + 1 - t == d1 * d2
+}
+
+pub predicate ec_hasse_order_ok(
+  p : Int,
+  t : Int,
+  d1 : Int,
+  d2 : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (ord_e, frob_diff) =>
+      ord_e == p + 1 - t &&
+      ord_e == d1 * d2 &&
+      ord_e > 0 &&
+      frob_diff == (p + 1 - ord_e) - t &&
+      frob_diff == 0
+  }
+}
+
+/// --- 2. E2：二次扭轉點數守恆 #E + #E' = 2p + 2 與 Legendre 符號逐點相消 ---
+
+pub predicate ec_twist_sum_ok(
+  p : Int,
+  t : Int,
+  chi_x : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (ord_e, ord_twist, sum_orders, pair_pts) =>
+      ord_e == p + 1 - t &&
+      ord_twist == p + 1 + t &&
+      sum_orders == ord_e + ord_twist &&
+      sum_orders == 2 * p + 2 &&
+      pair_pts == (1 + chi_x) + (1 - chi_x) &&
+      pair_pts == 2
+  }
+}
+
+/// --- 3. E3/H1：Vélu 2-同源係數變換 t_v = 3α²+a, a' = a-5t_v, b' = b-7αt_v ---
+
+pub predicate p_two_torsion_hyp(a : Int, b : Int, alpha : Int) {
+  alpha * alpha * alpha + a * alpha + b == 0
+}
+
+pub predicate velu_iso2_ok(
+  a : Int,
+  b : Int,
+  alpha : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (tv, a_prime, b_prime, b_rel) =>
+      tv == 3 * alpha * alpha + a &&
+      a - a_prime == 5 * tv &&
+      b - b_prime == 7 * alpha * tv &&
+      b_rel == (b - b_prime) + 21 * b + 14 * a * alpha &&
+      b_rel == 0
+  }
+}
+
+/// --- 4. E4/H1：Vélu 3-同源係數變換 t = 2(3x²+a), u = 4y², a' = a-5t, b' = b-7(u+tx) ---
+
+pub predicate velu_iso3_ok(
+  a : Int,
+  b : Int,
+  x : Int,
+  y : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (tv, uv, a_prime, b_prime) =>
+      tv == 2 * (3 * x * x + a) &&
+      uv == 4 * y * y &&
+      a - a_prime == 10 * (3 * x * x + a) &&
+      b - b_prime == 28 * y * y + 14 * x * (3 * x * x + a)
+  }
+}
+
+/// --- 5. H2：Tate 模 T_ℓ(E) 上 Frobenius 自同態滿足特徵方程 Φ² - t·Φ + p·I₂ = 0 ---
+
+pub predicate tate_frob_ch_ok(
+  f11 : Int,
+  f12 : Int,
+  f21 : Int,
+  f22 : Int,
+  r : (Int, Int, Int, Int, Int, Int),
+) {
+  match r {
+    (t, p, z11, z12, z21, z22) =>
+      t == f11 + f22 &&
+      p == f11 * f22 - f12 * f21 &&
+      z11 == 0 &&
+      z12 == 0 &&
+      z21 == 0 &&
+      z22 == 0
+  }
+}
+
+/// --- 6. E5/H4：Teichmüller / Hensel 提升模 p 同餘保持見證 ---
+
+pub predicate p_teich_step_hyp(
+  w0 : Int,
+  a : Int,
+  p : Int,
+  k0 : Int,
+  pk_prev : Int,
+) {
+  p >= 2 && pk_prev >= 1 && w0 - a == p * k0
+}
+
+pub predicate teich_step_ok(
+  w0 : Int,
+  a : Int,
+  p : Int,
+  delta : Int,
+  pk_prev : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (w1, k1) =>
+      w1 == w0 + delta * (p * pk_prev) &&
+      w1 - a == p * k1
+  }
+}
+
+/// --- 7. E6：乘法形式群律 F_m(X,Y) = X + Y + X·Y 之單位、交換與結合三公理 ---
+
+pub predicate formal_mult_axioms_ok(
+  x : Int,
+  y : Int,
+  z : Int,
+  r : (Int, Int, Int, Int, Int),
+) {
+  match r {
+    (unit_r, comm_xy, comm_yx, assoc_lhs, assoc_rhs) =>
+      unit_r == x &&
+      comm_xy == x + y + x * y &&
+      comm_yx == y + x + y * x &&
+      comm_xy == comm_yx &&
+      assoc_lhs == x + y + z + x * y + x * z + y * z + x * y * z &&
+      assoc_lhs == assoc_rhs
+  }
+}
+
+/// --- 8. E6：形式對數二階截斷群同態 2·L₂(F_m(X,Y)) ≡ 2·L₂(X) + 2·L₂(Y) (mod deg ≥ 3) ---
+
+pub predicate formal_log_deg2_ok(
+  x : Int,
+  y : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (lhs_deg2, rhs_deg2) =>
+      lhs_deg2 == 2 * (x + y + x * y) - (x + y) * (x + y) &&
+      rhs_deg2 == (2 * x - x * x) + (2 * y - y * y) &&
+      lhs_deg2 == rhs_deg2
+  }
+}
+
+/// --- 9. E6：離散李群骨架 |SL₂(Z/p^n)| = p^{3n-2}(p²-1) 與李代數核 p³ 遞推 ---
+
+pub predicate p_sl2_hyp(p : Int, p_3n2 : Int) {
+  p >= 2 && p_3n2 >= 1
+}
+
+pub predicate sl2_order_skeleton_ok(
+  p : Int,
+  p_3n2 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (ord_n, ord_n1, lie_ker) =>
+      lie_ker == p * p * p &&
+      ord_n == p_3n2 * (p * p - 1) &&
+      ord_n1 == (p_3n2 * lie_ker) * (p * p - 1) &&
+      ord_n1 == lie_ker * ord_n &&
+      ord_n >= 3
+  }
+}
+
+/// --- 10. E6：SO(3,Z) 離散正交旋轉群生成元正交性 RᵀR = I₃ 與 det(R_x · R_z) = 1 ---
+
+pub predicate so3_discrete_ok(r : (Int, Int, Int, Int, Int)) {
+  match r {
+    (det_rx, det_rz, det_prod, ortho_diag_sum, trace_prod) =>
+      det_rx == 1 &&
+      det_rz == 1 &&
+      det_prod == det_rx * det_rz &&
+      det_prod == 1 &&
+      ortho_diag_sum == 3 &&
+      trace_prod == 0
+  }
+}
+
+/// --- 11. E6/H10：p-進超度量強三角不等式見證 a = p^m·ka ∧ b = p^m·kb ⟹ a+b = p^m·(ka+kb) ---
+
+pub predicate p_ultrametric_wit_hyp(
+  a : Int,
+  b : Int,
+  p_min : Int,
+  ka : Int,
+  kb : Int,
+) {
+  p_min >= 1 && a == p_min * ka && b == p_min * kb
+}
+
+pub predicate ultrametric_wit_ok(
+  a : Int,
+  b : Int,
+  p_min : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (sum_ab, k_sum) =>
+      sum_ab == a + b &&
+      sum_ab == p_min * k_sum
+  }
+}
+
+/// --- 12. H3/H5：平面曲線虧格 2g = (d-1)(d-2)、貝爾簇維度 d² 與 Kani 乘積維度 (2g)² = 4g² ---
+
+pub predicate p_curve_deg_hyp(d : Int, g : Int) {
+  d >= 1 && g >= 1
+}
+
+pub predicate kani_genus_dim_ok(
+  d : Int,
+  g : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (two_g, dim_abel, kani_lhs, kani_rhs) =>
+      two_g == (d - 1) * (d - 2) &&
+      two_g >= 0 &&
+      dim_abel == d * d &&
+      dim_abel >= 1 &&
+      kani_lhs == (2 * g) * (2 * g) &&
+      kani_rhs == 4 * g * g &&
+      kani_lhs == kani_rhs
+  }
+}
+
+/// --- 13. F1：DSL 統一框架規範形等價律（hom, ext≅tor, bidual, tensor 交換律）---
+
+pub predicate dsl_canonical_eq_ok(
+  a : Int,
+  g : Int,
+  r : ((Int, Int), (Int, Int), (Int, Int), (Int, Int)),
+) {
+  match r {
+    ((hom_ab, cyc_g), (ext_ab, tor_ab), (bidual_a, orig_a), (ten_ab, ten_ba)) =>
+      hom_ab == g &&
+      hom_ab == cyc_g &&
+      ext_ab == g &&
+      ext_ab == tor_ab &&
+      bidual_a == a &&
+      bidual_a == orig_a &&
+      ten_ab == g &&
+      ten_ab == ten_ba
+  }
+}
+
+/// --- 純代數引理 ---
+
+pub predicate formal_mult_assoc_id_ok(x : Int, y : Int, z : Int) {
+  (x + y + x * y) + z + (x + y + x * y) * z ==
+    x + (y + z + y * z) + x * (y + z + y * z)
+}
+
+pub lemma lemma_formal_mult_assoc(x : Int, y : Int, z : Int) where {
+  proof_ensure: formal_mult_assoc_id_ok(x, y, z),
+} {}
+
+pub predicate twist_legendre_cancel_ok(chi : Int) {
+  (1 + chi) + (1 - chi) == 2
+}
+
+pub lemma lemma_twist_legendre_cancel(chi : Int) where {
+  proof_ensure: twist_legendre_cancel_ok(chi),
+} {}

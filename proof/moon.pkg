@@ -1,0 +1,7 @@
+import {
+  "sigma/supermatrix/proof/bridge",
+}
+
+options(
+  "proof-enabled": true,
+)

@@ -1,0 +1,137 @@
+///|
+/// 邏輯側（.mbtp）：算術、數論與線性代數的謂詞、邏輯函數與引理。
+/// 每條謂詞 / 引理對應 corpus 中一條「義務自證」條目（機器見證）。
+///
+/// 本檔採用的三段式寫法（v0.10.14 實測）：
+///   1. 契約欄位（proof_require / proof_ensure）只放**具名謂詞呼叫**（複合條件會偽報 `&&` 解析錯）。
+///   2. 需要「假設 ⟹ 結論」形式的算術引理，改把蘊含寫在**謂詞內部**（可被 z3 直接消解）。
+///   3. 整除類事實一律以**顯式餘因子見證**表述，避開 SMT 對 mod 的非線性推理。
+
+/// --- 基本性質 ---
+
+predicate nonneg(r : Int) {
+  r >= 0
+}
+
+predicate abs_ok(x : Int, r : Int) {
+  (x >= 0 && r == x) || (x < 0 && r == -x)
+}
+
+predicate in_range(r : Int, m : Int) {
+  m > 0 && 0 <= r && r < m
+}
+
+/// --- 前置條件（契約用；複合條件必須具名）---
+
+predicate p_nonneg_hyp(n : Int) {
+  n >= 0
+}
+
+predicate p_pos_hyp(m : Int) {
+  m > 0
+}
+
+predicate p_gcd_hyp(a : Int, b : Int) {
+  a > 0 && b >= 0
+}
+
+predicate p_pow_hyp(e : Int, m : Int) {
+  m > 0 && e >= 0
+}
+
+predicate p_powr_hyp(a : Int, e : Int, m : Int, r : Int) {
+  m > 0 && e >= 0 && 0 <= a && a < m && 0 <= r && r < m
+}
+
+/// --- 後置條件 ---
+
+predicate p_min_ok(a : Int, b : Int, r : Int) {
+  r <= a && r <= b
+}
+
+predicate p_max_ok(a : Int, b : Int, r : Int) {
+  r >= a && r >= b
+}
+
+predicate tri_ok(i : Int, s : Int) {
+  2 * s == i * (i + 1)
+}
+
+predicate fib_res_ok(r : (Int, Int)) {
+  match r {
+    (a, b) => 0 <= a && a <= b
+  }
+}
+
+predicate isqrt_ok(n : Int, r : Int) {
+  n >= 0 → (r * r <= n && n < (r + 1) * (r + 1))
+}
+
+predicate p_isqrt_hyp(n : Int, r : Int) {
+  n >= 0 && r >= 0 && r * r <= n
+}
+
+predicate fact_pos(n : Int, r : Int) {
+  n >= 0 → r > 0
+}
+
+predicate no_small_divisor(n : Int) {
+  ∀ d : Int, (2 <= d && d < n) → n % d != 0
+}
+
+predicate prime_sound(n : Int, r : Bool) {
+  r == true → (n >= 2 && no_small_divisor(n))
+}
+
+predicate pow_mod_bound(r : Int, m : Int) {
+  m > 0 → (0 <= r && r < m)
+}
+
+/// 完整 gcd 規格：結果恆正、整除兩參數，且在整除偏序下最大。
+predicate gcd_full_ok(a : Int, b : Int, g : Int) {
+  g > 0 && a % g == 0 && b % g == 0 && (∀ d : Int, (d > 0 && a % d == 0 && b % d == 0) → d <= g)
+}
+
+/// --- 邏輯函數（.mbtp 內定義；順序須先於使用）---
+
+/// 平方根遞迴核心的終止度量。
+fn measure_isqrt(n : Int, r : Int) -> Int {
+  if r >= n {
+    0
+  } else {
+    n + 1 - r
+  }
+}
+
+/// --- 取餘步驟的整除橋接（蘊含寫在謂詞內，z3 可直接消解）---
+/// 側條件 a ≥ 0、b > 0 是必要的：Why3 的 ComputerDivision（截斷除法）與 SMT-LIB
+/// 的 div/mod（歐幾里得語意）僅在非負被除數、正除數時一致；缺少側條件時陳述為假
+/// （反例：b = 0 或 a < 0）。本框架的 gcd 語境恆滿足側條件。
+
+predicate p_dvd_le_hyp(a : Int, d : Int) {
+  a > 0 && d > 0 && a % d == 0
+}
+
+predicate divisor_le_ok(a : Int, d : Int) {
+  d <= a
+}
+
+/// --- 引理（經 z3 消解的機器證明；作為後續證明的公理）---
+
+/// 引理：正除數不大於被除數（整除偏序的算術基礎）。
+lemma divisor_le(a : Int, d : Int) where {
+  proof_require: p_dvd_le_hyp(a, d),
+  proof_ensure: divisor_le_ok(a, d),
+} {}
+
+/// --- 引用 proof/bridge 套件：把已機器證明的取餘橋接引入本套件 ---
+
+predicate fwd_bridge_ok(a : Int, b : Int, d : Int) {
+  @bridge.p_dvd_mod_hyp(a, b, d) → @bridge.dvd_mod_mod_ok(a, b, d)
+}
+
+/// 引理：取餘步驟的整除前向封閉（引用 proof/bridge 的機器證明作為公理）。
+lemma fwd_bridge(a : Int, b : Int, d : Int) where {
+  proof_ensure: fwd_bridge_ok(a, b, d),
+} {}
+

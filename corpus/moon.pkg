@@ -1,0 +1,18 @@
+import {
+  "sigma/supermatrix/core",
+  "sigma/supermatrix/fga",
+  "sigma/supermatrix/latt",
+  "sigma/supermatrix/spec",
+  "sigma/supermatrix/curves",
+  "sigma/supermatrix/padic",
+  "sigma/supermatrix/dsl",
+  "sigma/supermatrix/synth",
+  "sigma/supermatrix/mat2",
+  "sigma/supermatrix/proof/synth" @psynth,
+  "sigma/supermatrix/proof/bridge",
+  "sigma/supermatrix/proof/mat2" @pmat2,
+  "sigma/supermatrix/proof/fga_snf" @pfga,
+  "sigma/supermatrix/proof/latt" @platt,
+  "sigma/supermatrix/proof/spec" @pspec,
+  "sigma/supermatrix/proof/curves_padic" @pcp,
+}

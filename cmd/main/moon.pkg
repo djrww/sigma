@@ -1,0 +1,15 @@
+import {
+  "sigma/supermatrix/core",
+  "sigma/supermatrix/fga",
+  "sigma/supermatrix/latt",
+  "sigma/supermatrix/spec",
+  "sigma/supermatrix/curves",
+  "sigma/supermatrix/padic",
+  "sigma/supermatrix/dsl",
+  "sigma/supermatrix/synth",
+  "sigma/supermatrix/mat2",
+  "sigma/supermatrix/corpus",
+  "moonbitlang/core/env",
+}
+
+pkgtype(kind: "executable")

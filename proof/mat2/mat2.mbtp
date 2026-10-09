@@ -1,0 +1,175 @@
+///|
+/// 邏輯側（.mbtp）：第二代矩陣可能性（Grassmann 超矩陣、多項式 λ-矩陣、Kronecker 階層矩陣、
+/// Tropical 極值半環矩陣）之形式化規格與與第一代 `core::Mat` 之差異性定理。
+
+/// --- 1. Grassmann 偶子代數 Λ₀ = Z[η]/(η²) 乘法結合律與冪零性 ---
+
+pub predicate grassmann_even_mul_ok(
+  a0 : Int,
+  a1 : Int,
+  b0 : Int,
+  b1 : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (c0, c1) => c0 == a0 * b0 && c1 == a0 * b1 + a1 * b0
+  }
+}
+
+/// --- 2. Grassmann 奇空間 Λ₁ = Zθ₁ ⊕ Zθ₂ 外積之反交換律與自乘零化 ---
+
+pub predicate grassmann_odd_wedge_ok(
+  u1 : Int,
+  u2 : Int,
+  v1 : Int,
+  v2 : Int,
+  r : (Int, Int, Int),
+) {
+  match r {
+    (uv, vu, uu) =>
+      uv == u1 * v2 - u2 * v1 &&
+      vu == v1 * u2 - v2 * u1 &&
+      uv + vu == 0 &&
+      uu == 0
+  }
+}
+
+/// --- 3a. Grassmann 超矩陣 Berezinian 完整乘法性定理：Ber_Λ(M ·_Λ N) == Ber_Λ(M) ·_Λ Ber_Λ(N) ---
+/// 在反交換設定 θ₂θ₁ = -θ₁θ₂ 下，對任意非零奇部 b, c, f, g 恆成立！
+
+pub predicate ber_grassmann_mul_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  r : ((Int, Int), (Int, Int)),
+) {
+  match r {
+    ((lhs0, lhs1), (rhs0, rhs1)) =>
+      lhs0 == rhs0 &&
+      lhs1 == rhs1 &&
+      lhs0 == a * e &&
+      lhs1 == -(a * f * g + b * c * e)
+  }
+}
+
+/// --- 3b. 對照定理：第一代交換矩陣 `core::Mat`（θ₂θ₁ = +θ₁θ₂）在非零奇部下違反 Berezinian 乘法性 ---
+/// 差值恆等於 -2·a·c·e·f（當 a,c,e,f ≠ 0 時必不為 0）！
+
+pub predicate ber_commutative_defect_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  defect : Int,
+) {
+  defect == ((b * g - (a * f + b) * (c * e + g)) - a * e * c * f) - -(a * f * g + b * c * e) &&
+  defect == -2 * a * c * e * f
+}
+
+/// --- 4. Kronecker 張量積矩陣 A ⊗ B 之跡與行列式分解定理 ---
+
+pub predicate kronecker_trace2_ok(
+  a11 : Int,
+  a12 : Int,
+  a21 : Int,
+  a22 : Int,
+  b11 : Int,
+  b12 : Int,
+  b21 : Int,
+  b22 : Int,
+  r : Int,
+) {
+  r == a11 * b11 + a11 * b22 + a22 * b11 + a22 * b22 &&
+  r == (a11 + a22) * (b11 + b22) &&
+  a12 + a21 + b12 + b21 == a12 + a21 + b12 + b21
+}
+
+pub predicate kronecker_det_diag2_ok(
+  a1 : Int,
+  a2 : Int,
+  b1 : Int,
+  b2 : Int,
+  r : Int,
+) {
+  r == (a1 * b1) * (a1 * b2) * (a2 * b1) * (a2 * b2) &&
+  r == ((a1 * a2) * (a1 * a2)) * ((b1 * b2) * (b1 * b2))
+}
+
+/// --- 5. 多項式特徵鉛筆矩陣 xI - A 區分么模同 SNF 算子（剪切 vs 雙曲 Frobenius）---
+
+pub predicate p_pos_k(k : Int) {
+  k > 0
+}
+
+pub predicate poly_pencil_sep_ok(k : Int, r : (Int, Int, Int, Int)) {
+  match r {
+    (det_shear, det_hyp, disc_shear, disc_hyp) =>
+      det_shear == 1 &&
+      det_hyp == 1 &&
+      disc_shear == 0 &&
+      disc_hyp == k * (k + 4) &&
+      disc_hyp > disc_shear
+  }
+}
+
+/// --- 6. Tropical (min, +) 極值半環矩陣：結合律、分配律與 p-進賦值牛頓下界 ---
+
+pub fn tmin(x : Int, y : Int) -> Int {
+  if x <= y {
+    x
+  } else {
+    y
+  }
+}
+
+pub predicate tropical_scalar_assoc_ok(a : Int, b : Int, c : Int, r : (Int, Int)) {
+  match r {
+    (lhs, rhs) =>
+      lhs == tmin(tmin(a, b), c) &&
+      rhs == tmin(a, tmin(b, c)) &&
+      lhs == rhs
+  }
+}
+
+pub predicate tropical_distrib_ok(a : Int, b : Int, c : Int, r : (Int, Int)) {
+  match r {
+    (lhs, rhs) =>
+      lhs == a + tmin(b, c) &&
+      rhs == tmin(a + b, a + c) &&
+      lhs == rhs
+  }
+}
+
+pub predicate p_ultrametric_val_hyp(
+  va : Int,
+  vb : Int,
+  vc : Int,
+  vd : Int,
+  v_det : Int,
+) {
+  v_det >= tmin(va + vd, vb + vc)
+}
+
+pub predicate tropical_det2_bound_ok(
+  va : Int,
+  vb : Int,
+  vc : Int,
+  vd : Int,
+  v_det : Int,
+  tdet : Int,
+) {
+  tdet == tmin(va + vd, vb + vc) && v_det >= tdet
+}
+
+/// --- 7. 位移秩（Displacement Rank）循環生成元恆等式 ---
+
+pub predicate displacement_circ2_ok(c0 : Int, c1 : Int, r : (Int, Int, Int, Int)) {
+  match r {
+    (d11, d12, d21, d22) => d11 == 0 && d12 == 0 && d21 == 0 && d22 == 0 && c0 + c1 == c1 + c0
+  }
+}

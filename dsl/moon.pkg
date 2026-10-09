@@ -1,0 +1,10 @@
+import {
+  "sigma/supermatrix/core",
+  "sigma/supermatrix/fga",
+  "sigma/supermatrix/latt",
+  "sigma/supermatrix/spec",
+  "sigma/supermatrix/curves",
+  "sigma/supermatrix/padic",
+  "sigma/supermatrix/synth",
+  "sigma/supermatrix/proof/synth" @psynth,
+}

@@ -1,0 +1,287 @@
+///|
+/// 邏輯側（.mbtp）：形式化驅動代碼生成與演算法合成（Verified Algorithm Synthesis & Superoptimization）
+/// 的規格謂詞與等價性引理。涵蓋：
+///   1. Horner 多項式降階合成（6 次乘法 → 3 次乘法）
+///   2. Gauss–Karatsuba 複數／高斯整數乘法合成（4 次乘法 → 3 次乘法）
+///   3. Cayley–Hamilton 2×2 矩陣二次冪線性化合成（A² → tr(A)A − det(A)I）
+///   4. 伴隨矩陣（Adjugate）無除法克萊姆求解合成（A^adj · A · x = det(A) · x）
+///   5. Bézout 擴展歐幾里得單步係數見證合成（au + bv = g）
+///   6. 平方差／四分之一平方乘法強度折減（(x+y)² − (x−y)² = 4xy）
+///   7. 二點蝶形 DFT 往返反演與 Parseval 能量守恆規格
+///   8. Brahmagupta–Fibonacci 範數乘性與同源複合度數合成
+///   9. CEGIS 反例引導修補：全整數域（含負被除數 a < 0）歐幾里得帶餘除法合成
+
+/// --- 1. Horner 法則與樸素多項式規格等價 ---
+
+pub predicate horner3_ok(a3 : Int, a2 : Int, a1 : Int, a0 : Int, x : Int, r : Int) {
+  r == a3 * x * x * x + a2 * x * x + a1 * x + a0
+}
+
+/// --- 2. Gauss–Karatsuba 3 乘法合成與 4 乘法規格等價 ---
+
+pub predicate karatsuba_ok(a : Int, b : Int, c : Int, d : Int, r : (Int, Int)) {
+  match r {
+    (re, im) => re == a * c - b * d && im == a * d + b * c
+  }
+}
+
+/// --- 3. Cayley–Hamilton 2×2 矩陣平方線性化合成 ---
+
+pub predicate ch_pow2_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (m11, m12, m21, m22) =>
+      m11 == a * a + b * c &&
+      m12 == a * b + b * d &&
+      m21 == c * a + d * c &&
+      m22 == c * b + d * d
+  }
+}
+
+/// --- 4. 伴隨矩陣無除法線性系統求解合成 ---
+
+pub predicate adjugate_solve_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  x : Int,
+  y : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (rx, ry) => rx == (a * d - b * c) * x && ry == (a * d - b * c) * y
+  }
+}
+
+/// --- 5. Bézout 擴展歐幾里得係數合成 ---
+
+pub predicate p_bezout_step_hyp(
+  a : Int,
+  b : Int,
+  u1 : Int,
+  v1 : Int,
+  g : Int,
+) {
+  a >= 0 && b > 0 && b * u1 + (a % b) * v1 == g
+}
+
+pub predicate bezout_step_ok(
+  a : Int,
+  b : Int,
+  g : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (u, v) => a * u + b * v == g
+  }
+}
+
+/// --- 6. 四分之一平方乘法強度折減 ---
+
+pub predicate quarter_sq_ok(x : Int, y : Int, r : Int) {
+  r == 4 * x * y
+}
+
+/// --- 7. 二點蝶形 DFT 反演與 Parseval 能量守恆 ---
+
+pub predicate butterfly_rt_ok(x0 : Int, x1 : Int, r : (Int, Int)) {
+  match r {
+    (z0, z1) => z0 == 2 * x0 && z1 == 2 * x1
+  }
+}
+
+pub predicate butterfly_parseval_ok(x0 : Int, x1 : Int, r : (Int, Int)) {
+  match r {
+    (y0, y1) => y0 * y0 + y1 * y1 == 2 * (x0 * x0 + x1 * x1)
+  }
+}
+
+/// --- 8. Brahmagupta–Fibonacci 同源範數合成 ---
+
+pub predicate brahmagupta_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (u, v) => u * u + v * v == (a * a + b * b) * (c * c + d * d)
+  }
+}
+
+/// --- 9. CEGIS 修補後的全域（含負數 a < 0）歐幾里得除法規格 ---
+
+pub predicate p_pos_divisor(b : Int) {
+  b > 0
+}
+
+pub predicate euclid_total_ok(a : Int, b : Int, r : (Int, Int)) {
+  match r {
+    (q, rem) => a == b * q + rem && 0 <= rem && rem < b
+  }
+}
+
+/// --- 10. 辛雙環標準交錯形式消滅恆等式 vᵀ J v = 0 ---
+
+pub predicate symplectic_alt_ok(x : Int, y : Int, r : Int) {
+  r == 0 && x * y - y * x == r
+}
+
+/// --- 11. 循環算子 2×2 雙向 FFT 對角化定理：F⁻¹(F(c) ⊙ F(x)) = 2 · Circ(c)·x ---
+
+pub predicate circulant2_fft_ok(
+  c0 : Int,
+  c1 : Int,
+  x0 : Int,
+  x1 : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (y0, y1) =>
+      y0 == 2 * (c0 * x0 + c1 * x1) && y1 == 2 * (c1 * x0 + c0 * x1)
+  }
+}
+
+/// --- 12. 辛算子對合消去規則：(-J)·J·v = v 且 J²·v = -v ---
+
+pub predicate symplectic_inv_ok(x : Int, y : Int, r : (Int, Int)) {
+  match r {
+    (rx, ry) => rx == x && ry == y
+  }
+}
+
+/// --- 13. 伴隨／轉置反變函子重寫規則：(A·B)ᵀ = Bᵀ·Aᵀ ---
+
+pub predicate transpose_mul2_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  h : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (t11, t12, t21, t22) =>
+      t11 == a * e + b * g &&
+      t12 == c * e + d * g &&
+      t21 == a * f + b * h &&
+      t22 == c * f + d * h
+  }
+}
+
+/// --- 14. 矩陣乘積跡之循環不變性與點積降階：tr(A·B) = tr(B·A) ---
+
+pub predicate trace_cyclic2_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  h : Int,
+  r : Int,
+) {
+  r == (a * e + b * g) + (c * f + d * h) &&
+  r == (e * a + f * c) + (g * b + h * d)
+}
+
+/// --- 15. Rosati 對合與 Kani 同源鑽石恆等式：α† · α = (a² + b²) · I₂ ---
+
+pub predicate rosati_kani_ok(
+  a : Int,
+  b : Int,
+  x : Int,
+  y : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (rx, ry) => rx == (a * a + b * b) * x && ry == (a * a + b * b) * y
+  }
+}
+
+/// --- 16. Hensel 二次提升步（p^k → p^{2k}）餘項見證合成 ---
+
+pub predicate p_hensel_hyp(
+  x0 : Int,
+  c : Int,
+  t : Int,
+  pk : Int,
+  m : Int,
+) {
+  (x0 * x0 - c) + 2 * x0 * t * pk == m * (pk * pk)
+}
+
+pub predicate hensel_step_ok(
+  x0 : Int,
+  c : Int,
+  t : Int,
+  pk : Int,
+  r : (Int, Int),
+) {
+  match r {
+    (x1, k2) => x1 == x0 + t * pk && x1 * x1 - c == k2 * (pk * pk)
+  }
+}
+
+/// --- 17. Pontryagin 二重對偶／二重轉置對合消去：(Aᵀ)ᵀ = A ---
+
+pub predicate bidual2_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  r : (Int, Int, Int, Int),
+) {
+  match r {
+    (r11, r12, r21, r22) => r11 == a && r12 == b && r21 == c && r22 == d
+  }
+}
+
+/// --- 18–21. E-Graph 等式飽和引擎與多後端下降（Horner vs Estrin）重寫規則引理 ---
+
+pub predicate estrin3_ok(a3 : Int, a2 : Int, a1 : Int, a0 : Int, x : Int, r : Int) {
+  r == a3 * x * x * x + a2 * x * x + a1 * x + a0 &&
+  r == ((a3 * x + a2) * x + a1) * x + a0
+}
+
+pub predicate circulant_comm2_ok(a0 : Int, a1 : Int, b0 : Int, b1 : Int) {
+  a0 * b0 + a1 * b1 == b0 * a0 + b1 * a1 &&
+  a0 * b1 + a1 * b0 == b0 * a1 + b1 * a0
+}
+
+pub predicate horner_step_rule_ok(acc : Int, c1 : Int, c0 : Int, x : Int) {
+  (acc * x + c1) * x + c0 == acc * (x * x) + c1 * x + c0
+}
+
+pub predicate kani_det_sum_ok(a : Int, b : Int) {
+  a * a - (-b) * b == a * a + b * b
+}
+
+/// 引理 18：2×2 循環算子乘法交換律 Circ(a)·Circ(b) = Circ(b)·Circ(a)（E-graph 交換重寫規則）。
+pub lemma lemma_circulant_comm(a0 : Int, a1 : Int, b0 : Int, b1 : Int) where {
+  proof_ensure: circulant_comm2_ok(a0, a1, b0, b1),
+} {}
+
+/// 引理 19：Horner 單步結合展開重寫規則 ((acc·x + c₁)·x + c₀ = acc·x² + c₁·x + c₀)。
+pub lemma lemma_horner_step(acc : Int, c1 : Int, c0 : Int, x : Int) where {
+  proof_ensure: horner_step_rule_ok(acc, c1, c0, x),
+} {}
+
+/// 引理 20：Kani 反對稱區塊矩陣行列式展開 det([a, -b; b, a]) = a² + b²。
+pub lemma lemma_kani_det(a : Int, b : Int) where {
+  proof_ensure: kani_det_sum_ok(a, b),
+} {}
+
+
+

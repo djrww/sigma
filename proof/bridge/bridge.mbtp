@@ -1,0 +1,157 @@
+///|
+/// 取餘橋接套件（獨立套件＝乾淨的 SMT 語境）。
+///
+/// 工程發現（見 out/PROOF.md §「公理語境污染」）：同一敘述在含 20+ 條量詞公理的
+/// 套件中超時、在僅含必要公理的套件中秒證。取餘橋接正是此類敘述，故獨立成包。
+///
+/// 證明策略（三層）：
+///   1. 微步驟引理 m1–m4：把見證項釘死為 a/d、b/d，讓 SMT 只做代數；
+///   2. 見證形式（dvd_mod_step_w / dvd_mod_back_w）：餘因子顯式化；
+///   3. 取餘形式（dvd_mod_step / dvd_mod_back）：由 m1–m4、見證形式與同餘重寫合成。
+
+/// --- 微步驟引理 ---
+
+pub predicate m1_ok(a : Int, b : Int) {
+  a >= 0 && b > 0 → a % b == a - (a / b) * b
+}
+
+pub predicate m2_ok(a : Int, d : Int) {
+  d != 0 && a % d == 0 → a == d * (a / d)
+}
+
+pub predicate m3_ok(x : Int, d : Int) {
+  d != 0 → d * x % d == 0
+}
+
+pub predicate m4_ok(a : Int, b : Int, d : Int) {
+  a >= 0 && b > 0 && d > 0 && a % d == 0 && b % d == 0 →
+    a % b == d * (a / d - (a / b) * (b / d))
+}
+
+/// 微引理 1：截斷除法的除法–餘數恆等式（a ≥ 0 時與歐幾里得形式一致）。
+pub lemma m1(a : Int, b : Int) where {
+  proof_ensure: m1_ok(a, b),
+} {}
+
+/// 微引理 2：由餘數為 0 取得顯式倍數見證 a = d·(a/d)。
+pub lemma m2(a : Int, d : Int) where {
+  proof_ensure: m2_ok(a, d),
+} {}
+
+/// 微引理 3：乘積被其因子整除。
+pub lemma m3(x : Int, d : Int) where {
+  proof_ensure: m3_ok(x, d),
+} {}
+
+/// 微引理 4：a mod b 的見證寫成 (a/d) − (a/b)·(b/d)，所有項皆已釘死。
+pub lemma m4(a : Int, b : Int, d : Int) where {
+  proof_ensure: m4_ok(a, b, d),
+} {}
+
+/// --- 見證函數與同餘重寫步驟 ---
+
+/// a mod b 的整除見證：當 d | a、d | b 時，a mod b = d·wmod(a,b,d)。
+pub fn wmod(a : Int, b : Int, d : Int) -> Int {
+  a / d - (a / b) * (b / d)
+}
+
+pub predicate fwd_split_ok(a : Int, b : Int, d : Int) {
+  a >= 0 && b > 0 && d > 0 && a % d == 0 && b % d == 0 →
+    (a % b) % d == d * wmod(a, b, d) % d
+}
+
+/// 同餘重寫步驟：把 a mod b 的模餘結果換成見證形式（純同餘，SMT 秒證）。
+pub lemma fwd_split(a : Int, b : Int, d : Int) where {
+  proof_ensure: fwd_split_ok(a, b, d),
+} {}
+
+/// --- 取餘步驟的整除橋接（餘因子見證形式）---
+
+pub predicate dvd_mod_step_ok(a : Int, b : Int, d : Int, k1 : Int, k2 : Int) {
+  a >= 0 && b > 0 && a == d * k1 && b == d * k2 → a % b == d * (k1 - (a / b) * k2)
+}
+
+pub predicate dvd_mod_back_ok(a : Int, b : Int, d : Int, k2 : Int, kr : Int) {
+  a >= 0 && b > 0 && b == d * k2 && a % b == d * kr → a == d * (k2 * (a / b) + kr)
+}
+
+/// 引理：取餘步驟的整除前向封閉（餘因子見證）。
+pub lemma dvd_mod_step_w(a : Int, b : Int, d : Int, k1 : Int, k2 : Int) where {
+  proof_ensure: dvd_mod_step_ok(a, b, d, k1, k2),
+} {}
+
+/// 引理：取餘步驟的整除逆推（餘因子見證）。
+pub lemma dvd_mod_back_w(a : Int, b : Int, d : Int, k2 : Int, kr : Int) where {
+  proof_ensure: dvd_mod_back_ok(a, b, d, k2, kr),
+} {}
+
+/// --- 取餘步驟的整除橋接（取餘形式）---
+
+pub predicate p_dvd_mod_hyp(a : Int, b : Int, d : Int) {
+  a >= 0 && b > 0 && d > 0 && a % d == 0 && b % d == 0
+}
+
+pub predicate dvd_mod_mod_ok(a : Int, b : Int, d : Int) {
+  (a % b) % d == 0
+}
+
+/// 引理：取餘步驟的整除前向封閉（d | a, b ⟹ d | a mod b）。
+pub lemma dvd_mod_step(a : Int, b : Int, d : Int) where {
+  proof_require: p_dvd_mod_hyp(a, b, d),
+  proof_ensure: dvd_mod_mod_ok(a, b, d),
+} {}
+
+/// --- 逆推方向的鏡像片段（乘數在右側，讓 E-matching 得以命中）---
+
+pub predicate m2r_ok(x : Int, d : Int) {
+  d != 0 && x % d == 0 → x / d * d == x
+}
+
+pub predicate m3r_ok(x : Int, y : Int, z : Int) {
+  z != 0 → (x * z + y * z) % z == 0
+}
+
+/// 鏡像引理 2：除數在右側的見證等式。
+pub lemma m2r(x : Int, d : Int) where {
+  proof_ensure: m2r_ok(x, d),
+} {}
+
+/// 鏡像引理 3：兩項同乘的整除（同餘重寫的最後一步）。
+pub lemma m3r(x : Int, y : Int, z : Int) where {
+  proof_ensure: m3r_ok(x, y, z),
+} {}
+
+/// --- 構造性見證步驟謂詞（供 bridge.mbt 以 WP 函數呼叫合成 dvd_mod_back）---
+
+pub predicate p_b_hyp(b : Int, d : Int) {
+  d > 0 && b % d == 0
+}
+
+pub predicate b_wit_ok(b : Int, d : Int, k : Int) {
+  b == d * k
+}
+
+pub predicate p_rem_hyp(a : Int, b : Int, d : Int) {
+  a >= 0 && b > 0 && d > 0 && (a % b) % d == 0
+}
+
+pub predicate rem_wit_ok(a : Int, b : Int, d : Int, kr : Int) {
+  a % b == d * kr
+}
+
+pub predicate p_dvd_modback_hyp(a : Int, b : Int, d : Int) {
+  a >= 0 && b > 0 && d > 0 && b % d == 0 && (a % b) % d == 0
+}
+
+pub predicate a_wit_ok(a : Int, d : Int, k : Int) {
+  a == d * k
+}
+
+pub predicate p_mul_mod_hyp(a : Int, d : Int, k : Int) {
+  d > 0 && a == d * k
+}
+
+pub predicate dvd_modback_mod_ok(a : Int, _b : Int, d : Int) {
+  a % d == 0
+}
+

@@ -1,0 +1,202 @@
+///|
+/// 邏輯側（.mbtp）：純代數與數論引理（與執行期函數分離，保持 SMT 語境精簡）。
+/// 每一條引理對應 corpus 中一條「義務自證」條目。
+
+predicate p_mod_pos_hyp(m : Int) {
+  m > 0
+}
+
+predicate p_std_rep(a : Int, m : Int) {
+  m > 0 && 0 <= a && a < m
+}
+
+predicate p_std2(a : Int, b : Int, m : Int) {
+  m > 0 && 0 <= a && a < m && 0 <= b && b < m
+}
+
+predicate p_dvd_exact_hyp(a : Int, b : Int) {
+  b != 0 && a % b == 0
+}
+
+predicate p_chain_w(a : Int, b : Int, c : Int, k1 : Int, k2 : Int) {
+  b == a * k1 && c == b * k2
+}
+
+predicate dvd_w_ok(a : Int, c : Int, k : Int) {
+  c == a * k
+}
+
+predicate p_both_w(a : Int, b : Int, c : Int, k1 : Int, k2 : Int) {
+  b == a * k1 && c == a * k2
+}
+
+predicate dvd_add_w_ok(a : Int, b : Int, c : Int, k : Int) {
+  b + c == a * k
+}
+
+predicate dvd_sub_w_ok(a : Int, b : Int, c : Int, k : Int) {
+  b - c == a * k
+}
+
+predicate p_congr_w(x : Int, y : Int, m : Int, k : Int) {
+  x - y == m * k
+}
+
+predicate lin_congr_w_ok(a : Int, x : Int, y : Int, m : Int, k : Int) {
+  a * x - a * y == m * (a * k)
+}
+
+predicate dvd_div_exact_ok(a : Int, b : Int) {
+  b * (a / b) == a
+}
+
+predicate p_chain_w3(d1 : Int, d2 : Int, d3 : Int, k1 : Int, k2 : Int) {
+  d2 == d1 * k1 && d3 == d2 * k2
+}
+
+predicate snf_chain_ok(d1 : Int, d3 : Int, k : Int) {
+  d3 == d1 * k
+}
+
+predicate mod_add_ok(a : Int, b : Int, m : Int) {
+  (a + b) % m == (a % m + b % m) % m
+}
+
+predicate mod_mul_ok(a : Int, b : Int, m : Int) {
+  a * b % m == a % m * (b % m) % m
+}
+
+predicate mod_range_ok(a : Int, m : Int) {
+  0 <= (a % m + m) % m && (a % m + m) % m < m
+}
+
+predicate zero_unique_ok(a : Int, m : Int) {
+  (a == 0) == (a % m == 0)
+}
+
+predicate even_ok(n : Int) {
+  (2 * n) % 2 == 0
+}
+
+predicate polarization_scalar_ok(u : Int, v : Int) {
+  (u + v) * (u + v) - u * u - v * v == 2 * (u * v)
+}
+
+predicate ch2_ok(a : Int, b : Int, c : Int, d : Int) {
+  a * a + b * c - (a + d) * a + (a * d - b * c) == 0
+}
+
+predicate ch2_diag_ok(a : Int, b : Int, c : Int, d : Int) {
+  c * b + d * d - (a + d) * d + (a * d - b * c) == 0
+}
+
+predicate det2_mul_ok(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  h : Int,
+) {
+  (a * e + b * g) * (c * f + d * h) - (a * f + b * h) * (c * e + d * g) ==
+    (a * d - b * c) * (e * h - f * g)
+}
+
+/// 邏輯側絕對值（abs_mul 使用）。
+fn abs_logic(x : Int) -> Int {
+  if x < 0 {
+    -x
+  } else {
+    x
+  }
+}
+
+predicate abs_mul_ok(a : Int, b : Int) {
+  abs_logic(a * b) == abs_logic(a) * abs_logic(b)
+}
+
+/// 引理：模加法同態性（商環 Z/m 的運算良定義）。
+lemma mod_add(a : Int, b : Int, m : Int) where {
+  proof_require: p_std2(a, b, m),
+  proof_ensure: mod_add_ok(a, b, m),
+} {}
+/// 引理：模乘法同態性。
+lemma mod_mul(a : Int, b : Int, m : Int) where {
+  proof_require: p_std2(a, b, m),
+  proof_ensure: mod_mul_ok(a, b, m),
+} {}
+/// 引理：整除傳遞（見證 k₁, k₂ ⟹ 餘因子 k₁k₂）。
+lemma dvd_trans_witness(a : Int, b : Int, c : Int, k1 : Int, k2 : Int) where {
+  proof_require: p_chain_w(a, b, c, k1, k2),
+  proof_ensure: dvd_w_ok(a, c, k1 * k2),
+} {}
+/// 引理：整除對加法封閉（見證形式）。
+lemma dvd_add_witness(a : Int, b : Int, c : Int, k1 : Int, k2 : Int) where {
+  proof_require: p_both_w(a, b, c, k1, k2),
+  proof_ensure: dvd_add_w_ok(a, b, c, k1 + k2),
+} {}
+/// 引理：整除對減法封閉（見證形式）。
+lemma dvd_sub_witness(a : Int, b : Int, c : Int, k1 : Int, k2 : Int) where {
+  proof_require: p_both_w(a, b, c, k1, k2),
+  proof_ensure: dvd_sub_w_ok(a, b, c, k1 - k2),
+} {}
+/// 引理：線性同餘的核（見證形式）。
+lemma lin_congr_witness(a : Int, x : Int, y : Int, m : Int, k : Int) where {
+  proof_require: p_congr_w(x, y, m, k),
+  proof_ensure: lin_congr_w_ok(a, x, y, m, k),
+} {}
+/// 引理：偶數的 2 倍性。
+lemma even_double(n : Int) where {
+  proof_ensure: even_ok(n),
+} {}
+/// 引理：絕對值的乘性。
+lemma abs_mul(a : Int, b : Int) where {
+  proof_ensure: abs_mul_ok(a, b),
+} {}
+/// 引理：整除消去（GPV / LLL 的整數除法核）。
+lemma dvd_div_exact(a : Int, b : Int) where {
+  proof_require: p_dvd_exact_hyp(a, b),
+  proof_ensure: dvd_div_exact_ok(a, b),
+} {}
+/// 引理：Smith 不變因子鏈 d₁|d₂|d₃ 的整除傳遞（見證形式）。
+lemma snf_chain(d1 : Int, d2 : Int, d3 : Int, k1 : Int, k2 : Int) where {
+  proof_require: p_chain_w3(d1, d2, d3, k1, k2),
+  proof_ensure: snf_chain_ok(d1, d3, k1 * k2),
+} {}
+/// 引理：模約化後恆落在 [0, m)。
+lemma mod_range(a : Int, m : Int) where {
+  proof_require: p_mod_pos_hyp(m),
+  proof_ensure: mod_range_ok(a, m),
+} {}
+/// 引理：Z/m 中 0 的代表元唯一（標準區間內）。
+lemma zero_unique(a : Int, m : Int) where {
+  proof_require: p_std_rep(a, m),
+  proof_ensure: zero_unique_ok(a, m),
+} {}
+/// 引理：極化恆等式的純量核：(u+v)² − u² − v² = 2uv。
+lemma polarization_scalar(u : Int, v : Int) where {
+  proof_ensure: polarization_scalar_ok(u, v),
+} {}
+/// 引理：2×2 Cayley–Hamilton 的 (1,1) 分量。
+lemma ch2_11(a : Int, b : Int, c : Int, d : Int) where {
+  proof_ensure: ch2_ok(a, b, c, d),
+} {}
+/// 引理：2×2 Cayley–Hamilton 的 (2,2) 分量。
+lemma ch2_22(a : Int, b : Int, c : Int, d : Int) where {
+  proof_ensure: ch2_diag_ok(a, b, c, d),
+} {}
+/// 引理：2×2 行列式的乘性（GL₂ 上的群同態）。
+lemma det2_mul_lemma(
+  a : Int,
+  b : Int,
+  c : Int,
+  d : Int,
+  e : Int,
+  f : Int,
+  g : Int,
+  h : Int,
+) where {
+  proof_ensure: det2_mul_ok(a, b, c, d, e, f, g, h),
+} {}
