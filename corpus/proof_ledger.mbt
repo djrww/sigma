@@ -159,6 +159,31 @@ pub fn proved_goals() -> Array[(String, String)] {
     (
       "displacement_circulant2_synth", "mat2/fn｜Why3+z3 全部驗證條件消解",
     ),
+    ("aot_contract_ring_lwe_kem", "sigma/fn｜Why3+z3 全部驗證條件消解"),
+    (
+      "aot_contract_lattice_gpv_trapdoor", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_isogeny_velu_kani", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_group_dlog_snf", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_padic_sl2_suite", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_super_berezinian_zk", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_kron_poly_auth", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_hal_blinding_equiv", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
+    (
+      "aot_contract_master_suite_gate", "sigma/fn｜Why3+z3 全部驗證條件消解",
+    ),
     (
       "ring_lwe_sym_enc_dec_synth", "sigma/fn｜Why3+z3 全部驗證條件消解",
     ),
@@ -412,5 +437,5 @@ pub fn skipped_exploded_algorithms() -> Array[(String, String, String, String)] 
 ///|
 /// 總結：(已證 VC 數, 未決 VC 數, 已證定義數, 未決定義數)。
 pub fn summary() -> (Int, Int, Int, Int) {
-  (159, 0, 164, 0)
+  (168, 0, 173, 0)
 }

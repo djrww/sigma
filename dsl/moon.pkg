@@ -9,3 +9,7 @@ import {
   "sigma/supermatrix/sigma",
   "sigma/supermatrix/proof/synth" @psynth,
 }
+
+options(
+  overrides: [ "sigma/supermatrix/sigma_hal_ct" ],
+)

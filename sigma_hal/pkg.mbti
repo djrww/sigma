@@ -1,0 +1,33 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "sigma/supermatrix/sigma_hal"
+
+// Values
+pub fn hal_audit_digest() -> Int
+
+pub fn hal_backend_name() -> String
+
+pub fn hal_ct_select(Int, Int, Int) -> Int
+
+pub fn hal_is_constant_time() -> Bool
+
+pub fn hal_kron_det_2_4(Int, Int) -> Int
+
+pub fn hal_lwe_blinded_decode(Int, Int, Int, Int, Int) -> Int
+
+pub fn hal_mod_add(Int, Int, Int) -> Int
+
+pub fn hal_mod_mul(Int, Int, Int) -> Int
+
+pub fn hal_mod_norm(Int, Int) -> Int
+
+pub fn hal_mod_sub(Int, Int, Int) -> Int
+
+pub fn hal_ntt_butterfly(Int, Int, Int, Int) -> (Int, Int)
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

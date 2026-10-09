@@ -1,3 +1,25 @@
+rule(
+  name: "sigma_prove_mbt",
+  command: "python3 tools/sigmac.py --mode=prove-mbt $input $output",
+)
+
+rule(
+  name: "sigma_prove_mbtp",
+  command: "python3 tools/sigmac.py --mode=prove-mbtp $input $output",
+)
+
+dev_build(
+  rule: "sigma_prove_mbt",
+  input: "crypto_suite.sigma",
+  output: "generated_cipher_contracts.mbt",
+)
+
+dev_build(
+  rule: "sigma_prove_mbtp",
+  input: "crypto_suite.sigma",
+  output: "generated_cipher_contracts.mbtp",
+)
+
 options(
   "proof-enabled": true,
 )

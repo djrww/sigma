@@ -1,0 +1,60 @@
+import {
+  "sigma/supermatrix/sigma",
+}
+
+pkgtype(kind: "foreign_library")
+
+rule(
+  name: "sigmac_ffi",
+  command: "python3 tools/sigmac.py --mode=ffi $input $output",
+)
+
+dev_build(
+  rule: "sigmac_ffi",
+  input: "crypto_suite.sigma",
+  output: "generated_ffi.mbt",
+)
+
+options(
+  link: {
+    "js": {
+      "exports": [
+        "ffi_ring_lwe_ntt:sigma_ffi_ring_lwe",
+        "ffi_lattice_trapdoor:sigma_ffi_lattice_trapdoor",
+        "ffi_velu_isogeny_suite:sigma_ffi_velu_isogeny",
+        "ffi_hidden_subgroup_dlog:sigma_ffi_hidden_subgroup_dlog",
+        "ffi_padic_hensel_sl2:sigma_ffi_padic_hensel",
+        "ffi_supermatrix_commit:sigma_ffi_supermatrix_commit",
+        "ffi_kron_guarded_cipher:sigma_ffi_kron_guarded",
+        "ffi_sigma_selftest_digest:sigma_ffi_selftest_digest",
+      ],
+      "format": "esm",
+    },
+    "wasm": {
+      "exports": [
+        "ffi_ring_lwe_ntt:sigma_ffi_ring_lwe",
+        "ffi_lattice_trapdoor:sigma_ffi_lattice_trapdoor",
+        "ffi_velu_isogeny_suite:sigma_ffi_velu_isogeny",
+        "ffi_hidden_subgroup_dlog:sigma_ffi_hidden_subgroup_dlog",
+        "ffi_padic_hensel_sl2:sigma_ffi_padic_hensel",
+        "ffi_supermatrix_commit:sigma_ffi_supermatrix_commit",
+        "ffi_kron_guarded_cipher:sigma_ffi_kron_guarded",
+        "ffi_sigma_selftest_digest:sigma_ffi_selftest_digest",
+      ],
+    },
+    "wasm-gc": {
+      "exports": [
+        "ffi_ring_lwe_ntt:sigma_ffi_ring_lwe",
+        "ffi_lattice_trapdoor:sigma_ffi_lattice_trapdoor",
+        "ffi_velu_isogeny_suite:sigma_ffi_velu_isogeny",
+        "ffi_hidden_subgroup_dlog:sigma_ffi_hidden_subgroup_dlog",
+        "ffi_padic_hensel_sl2:sigma_ffi_padic_hensel",
+        "ffi_supermatrix_commit:sigma_ffi_supermatrix_commit",
+        "ffi_kron_guarded_cipher:sigma_ffi_kron_guarded",
+        "ffi_sigma_selftest_digest:sigma_ffi_selftest_digest",
+      ],
+    },
+  },
+  "native-stub": [ "native_stub.c" ],
+  overrides: [ "sigma/supermatrix/sigma_hal_ct" ],
+)

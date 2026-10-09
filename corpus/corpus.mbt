@@ -2341,7 +2341,7 @@ pub fn build() -> Array[Entry] {
     )
     idx = idx + 1
   }
-  // L4：sigma 七大底層政策守衛、Kronecker 防溢位張量擴散與自研轉譯器 (.sigma → .mbt/.mbtp) 對接（20 條）
+  // L4：sigma 七大底層政策守衛、Kronecker 防溢位張量擴散與四大編譯器對接方案 (A, B, C, D) 見證（20 條）
   for k = 1; k <= 20; k = k + 1 {
     let (det_leaf, det_dense, tr_fast) = @psigma.hadamard_guard_kron_route_synth(
       k + 1,
@@ -2349,12 +2349,29 @@ pub fn build() -> Array[Entry] {
       3,
       2,
     )
+    let (hal_name, hal_ct, hal_digest, hal_equiv) = @sigma.aot_hal_backend_status()
+    let (d_ref, d_ct) = @psigma.aot_contract_hal_blinding_equiv(
+      14 + k,
+      7,
+      1,
+      k,
+      17,
+    )
+    let ffi_digest = @sigma.abi_sigma_selftest_digest()
+    let master_gate = @psigma.aot_contract_master_suite_gate()
     let mbt_out = @sigma.transpile_to_moonbit(@sigma.standard_sigma_script())
     let mbtp_out = @sigma.transpile_to_mbtp(@sigma.standard_sigma_script())
     let ok = det_leaf == det_dense &&
       tr_fast == (k + 3) * 5 &&
       @sigma.compiled_kron_poly_auth().ok &&
       @sigma.verify_all_compiled_ciphers() &&
+      hal_name == "sigma-hal-ct-masked-hw" &&
+      hal_ct &&
+      hal_digest == 1621736 &&
+      hal_equiv &&
+      d_ref == d_ct &&
+      ffi_digest == 6551 &&
+      master_gate == 8 &&
       mbt_out.contains("#export_name(\"sigma_ring_lwe_kem\")") &&
       mbtp_out.contains("pub lemma sigma_ring_lwe_kem_soundness")
     out.push(
@@ -2362,9 +2379,9 @@ pub fn build() -> Array[Entry] {
         idx,
         "L4",
         "義務",
-        "sigma 政策與自研轉譯器對接：Hadamard 守衛自動路由、AOT dev_build 預編譯與 .mbt/.mbtp 雙軌輸出",
-        "det(A⊗B)=(det A)^m(det B)^n ∧ Transpile(.sigma) ⊢ (.mbt, .mbtp)",
-        "k=\{k} det_leaf=\{det_leaf} AOT_ok=true",
+        "sigma 四大官方編譯器對接方案 (A: dev_build, B: moon prove, C: foreign_library FFI, D: virtual HAL)",
+        "det(A⊗B)=(det A)^m(det B)^n ∧ Transpile(.sigma) ⊢ (.mbt,.mbtp,FFI,HAL_ct)",
+        "k=\{k} det_leaf=\{det_leaf} HAL=\{hal_name} FFI=\{ffi_digest} Gate=\{master_gate}/8",
         ok,
       ),
     )
@@ -2481,7 +2498,7 @@ pub fn stats(es : Array[Entry]) -> String {
   let n_to = skipped_timeout_theorems().length()
   let n_ce = skipped_exploded_algorithms().length()
   s = s +
-    "形式化（moon prove + Why3 + z3/cvc5 九大套件）：驗證條件已證 " +
+    "形式化（moon prove + Why3 + z3/cvc5 十大套件）：驗證條件已證 " +
     pv.to_string() +
     " / 未決 " +
     pt.to_string() +
@@ -2541,7 +2558,7 @@ pub fn render_proof_audit_report() -> String {
   s = s +
     "驗證工具鏈：MoonBit v0.10.14 + Why3 1.7.2 + Z3 5.1.0 + CVC5 1.4.2\n"
   s = s +
-    "活動證明套件（9 套件）：驗證條件 (VC) 已證 " +
+    "活動證明套件（10 套件）：驗證條件 (VC) 已證 " +
     pv.to_string() +
     " / 未決 " +
     pt.to_string() +

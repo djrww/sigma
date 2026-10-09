@@ -7,6 +7,7 @@ import {
   "sigma/supermatrix/padic",
   "sigma/supermatrix/synth",
   "sigma/supermatrix/mat2",
+  "sigma/supermatrix/sigma_hal" @hal,
   "sigma/supermatrix/proof/synth" @psynth,
   "sigma/supermatrix/proof/mat2" @pmat2,
   "sigma/supermatrix/proof/fga_snf" @pfga,
@@ -16,10 +17,17 @@ import {
   "sigma/supermatrix/proof/sigma" @psigma,
 }
 
-rule(name: "sigmac", command: "python3 tools/sigmac.py $input $output")
+rule(
+  name: "sigmac_mbt",
+  command: "python3 tools/sigmac.py --mode=mbt $input $output",
+)
 
 dev_build(
-  rule: "sigmac",
+  rule: "sigmac_mbt",
   input: "crypto_suite.sigma",
   output: "generated_suite.mbt",
+)
+
+options(
+  overrides: [ "sigma/supermatrix/sigma_hal_ct" ],
 )

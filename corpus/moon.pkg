@@ -18,3 +18,7 @@ import {
   "sigma/supermatrix/proof/curves_padic" @pcp,
   "sigma/supermatrix/proof/sigma" @psigma,
 }
+
+options(
+  overrides: [ "sigma/supermatrix/sigma_hal_ct" ],
+)

@@ -14,3 +14,7 @@ import {
 }
 
 pkgtype(kind: "executable")
+
+options(
+  overrides: [ "sigma/supermatrix/sigma_hal_ct" ],
+)

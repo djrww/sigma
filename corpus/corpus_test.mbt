@@ -29,9 +29,9 @@ test "corpus/invariants" {
 ///|
 test "corpus/formal_proof_10_packages_and_skipped_audit" {
   let (pv, pt, pd, pu) = @corpus.summary()
-  inspect(pv, content="159")
+  inspect(pv, content="168")
   inspect(pt, content="0")
-  inspect(pd, content="164")
+  inspect(pd, content="173")
   inspect(pu, content="0")
   inspect(@corpus.skipped_timeout_theorems().length(), content="9")
   inspect(@corpus.skipped_exploded_algorithms().length(), content="10")
